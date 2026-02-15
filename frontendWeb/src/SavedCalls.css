@@ -1,0 +1,214 @@
+.saved-calls-container {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  background: linear-gradient(180deg, #0a0e1a 0%, #151922 100%);
+  min-height: 100vh;
+  color: #e0e6ed;
+}
+
+.back-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  margin-bottom: 1rem;
+  background: rgba(100, 200, 255, 0.1);
+  border: 1px solid rgba(100, 200, 255, 0.2);
+  border-radius: 8px;
+  color: #64c8ff;
+  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.back-button:hover {
+  background: rgba(100, 200, 255, 0.15);
+  border-color: rgba(100, 200, 255, 0.3);
+  transform: translateX(-4px);
+}
+
+.saved-calls-header {
+  margin-bottom: 2rem;
+}
+
+.saved-calls-header h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  background: linear-gradient(135deg, #64c8ff 0%, #9d7cff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.saved-calls-header p {
+  color: #8892a6;
+  font-size: 0.95rem;
+}
+
+.no-calls {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.no-calls-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.no-calls h2 {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+  color: #e0e6ed;
+}
+
+.no-calls p {
+  color: #8892a6;
+  font-size: 0.95rem;
+}
+
+.calls-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.call-card {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 1.5rem;
+  transition: all 0.2s ease;
+}
+
+.call-card:hover {
+  border-color: rgba(100, 200, 255, 0.2);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.call-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+}
+
+.call-card-title h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #e0e6ed;
+}
+
+.call-card-meta {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  font-size: 0.875rem;
+  color: #8892a6;
+}
+
+.delete-btn {
+  background: rgba(255, 100, 100, 0.1);
+  border: 1px solid rgba(255, 100, 100, 0.3);
+  border-radius: 8px;
+  color: #ff6464;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 1.25rem;
+}
+
+.delete-btn:hover {
+  background: rgba(255, 100, 100, 0.2);
+  border-color: rgba(255, 100, 100, 0.5);
+}
+
+.call-transcripts {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.transcripts-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.transcripts-table thead {
+  background: rgba(100, 200, 255, 0.05);
+}
+
+.transcripts-table th {
+  text-align: left;
+  padding: 1rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: #64c8ff;
+  border-bottom: 1px solid rgba(100, 200, 255, 0.1);
+}
+
+.transcripts-table tbody tr {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  transition: background 0.2s ease;
+}
+
+.transcripts-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.transcripts-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.transcripts-table td {
+  padding: 1rem;
+  vertical-align: top;
+}
+
+.time-col {
+  width: 100px;
+  font-size: 0.875rem;
+  color: #8892a6;
+  font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+}
+
+.speaker-col {
+  width: 150px;
+}
+
+.speaker-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.speaker-badge.agent {
+  background: rgba(100, 200, 255, 0.1);
+  color: #64c8ff;
+  border: 1px solid rgba(100, 200, 255, 0.2);
+}
+
+.speaker-badge.user {
+  background: rgba(100, 255, 150, 0.1);
+  color: #64ff96;
+  border: 1px solid rgba(100, 255, 150, 0.2);
+}
+
+.message-col {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #e0e6ed;
+}
