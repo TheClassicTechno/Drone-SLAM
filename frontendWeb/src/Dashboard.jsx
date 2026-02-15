@@ -1,16 +1,32 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import './Dashboard.css'
+import { DeliverySkeleton, ActivitySkeleton } from './Skeleton.jsx'
 
 export default function Dashboard() {
   const [message, setMessage] = useState('')
   const [sentMessages, setSentMessages] = useState([])
   const [liveTranscript, setLiveTranscript] = useState([])
+  const [isConnected, setIsConnected] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   const textareaRef = useRef(null)
+  const activityFeedRef = useRef(null)
+
+  // Simulate initial data loading
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false)
+    }, 800)
+    return () => clearTimeout(timer)
+  }, [])
 
   // Connect to live transcript SSE endpoint
   useEffect(() => {
     const eventSource = new EventSource('http://localhost:8000/live-transcript')
+
+    eventSource.onopen = () => {
+      setIsConnected(true)
+    }
 
     eventSource.onmessage = (event) => {
       const transcript = JSON.parse(event.data)
@@ -19,10 +35,14 @@ export default function Dashboard() {
 
     eventSource.onerror = (error) => {
       console.error('SSE error:', error)
+      setIsConnected(false)
       eventSource.close()
     }
 
-    return () => eventSource.close()
+    return () => {
+      eventSource.close()
+      setIsConnected(false)
+    }
   }, [])
 
   useEffect(() => {
@@ -31,6 +51,13 @@ export default function Dashboard() {
     el.style.height = 'auto'
     el.style.height = `${Math.min(el.scrollHeight, 120)}px`
   }, [message])
+
+  // Auto-scroll activity feed to bottom when new messages arrive
+  useEffect(() => {
+    if (activityFeedRef.current) {
+      activityFeedRef.current.scrollTop = activityFeedRef.current.scrollHeight
+    }
+  }, [liveTranscript, sentMessages])
 
   const handleSend = () => {
     const text = message.trim()
@@ -50,7 +77,7 @@ export default function Dashboard() {
     }))]
 
     if (allTranscripts.length === 0) {
-      alert('No transcripts to save')
+      alert('No transcripts to save. Make sure you have messages in the Activity feed!')
       return
     }
 
@@ -92,10 +119,14 @@ export default function Dashboard() {
     savedCalls.unshift(callRecord) // Add to beginning
 
     // Save to localStorage
-    localStorage.setItem('medwing_saved_calls', JSON.stringify(savedCalls))
-
-    // Show success message
-    alert(`✅ Call saved! ${deduped.length} unique messages saved.\n\nView in Saved Calls tab.`)
+    try {
+      localStorage.setItem('medwing_saved_calls', JSON.stringify(savedCalls))
+      
+      // Show success message
+      alert(`✅ Call saved successfully!\n\n${deduped.length} unique messages saved.\n\nView in "📞 Saved Calls" tab.`)
+    } catch (error) {
+      alert(`❌ Failed to save transcripts: ${error.message}`)
+    }
   }
   const deliveries = [
     { title: 'Valle Alto - Insulin & supplies', status: 'in-progress', time: '4h' },
@@ -158,7 +189,13 @@ export default function Dashboard() {
             <h1>Hello, Dr. Strange</h1>
             <p>Monitor deliveries and fleet status. You're on track today.</p>
           </div>
-          <div className="dashboard-date">14 Feb, 2025</div>
+          <div className="dashboard-header-right">
+            <div className={`connection-status ${isConnected ? 'connected' : 'disconnected'}`}>
+              <span className="status-dot"></span>
+              {isConnected ? 'Live Connected' : 'Connecting...'}
+            </div>
+            <div className="dashboard-date">14 Feb, 2025</div>
+          </div>
         </header>
 
         <section className="dashboard-list">
@@ -169,20 +206,24 @@ export default function Dashboard() {
             </select>
           </div>
           <ul className="dashboard-deliveries">
-            {deliveries.map((d, i) => (
-              <li key={i} className="dashboard-delivery">
-                <span className="dashboard-delivery-icon">◉</span>
-                <div className="dashboard-delivery-info">
-                  <span className="dashboard-delivery-title">{d.title}</span>
-                  <span className={`dashboard-delivery-status status-${d.status}`}>
-                    {d.status === 'in-progress' && 'In progress'}
-                    {d.status === 'on-hold' && 'On hold'}
-                    {d.status === 'done' && 'Done'}
-                  </span>
-                </div>
-                <span className="dashboard-delivery-time">{d.time}</span>
-              </li>
-            ))}
+            {isLoading ? (
+              <DeliverySkeleton />
+            ) : (
+              deliveries.map((d, i) => (
+                <li key={i} className="dashboard-delivery">
+                  <span className="dashboard-delivery-icon">◉</span>
+                  <div className="dashboard-delivery-info">
+                    <span className="dashboard-delivery-title">{d.title}</span>
+                    <span className={`dashboard-delivery-status status-${d.status}`}>
+                      {d.status === 'in-progress' && 'In progress'}
+                      {d.status === 'on-hold' && 'On hold'}
+                      {d.status === 'done' && 'Done'}
+                    </span>
+                  </div>
+                  <span className="dashboard-delivery-time">{d.time}</span>
+                </li>
+              ))
+            )}
           </ul>
         </section>
       </main>
@@ -195,7 +236,7 @@ export default function Dashboard() {
             <span>@medwing_ai</span>
           </div>
         </div>
-        <div className="dashboard-activity-feed">
+        <div className="dashboard-activity-feed" ref={activityFeedRef}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
             <h3 style={{ margin: 0 }}>Activity</h3>
             <button
@@ -216,38 +257,44 @@ export default function Dashboard() {
               Save Transcripts
             </button>
           </div>
-          {activity.map((a, i) => (
-            <div key={i} className="dashboard-activity-item">
-              <div className={`dashboard-activity-avatar avatar-${a.color}`}>{a.name[0]}</div>
-              <div>
-                <span className="dashboard-activity-name">{a.name}</span>
-                <span className="dashboard-activity-time">{a.time}</span>
-                <p>{a.text}</p>
-              </div>
-            </div>
-          ))}
-          {liveTranscript.map((t, i) => (
-            <div key={i} className="dashboard-activity-item">
-              <div className={`dashboard-activity-avatar avatar-${t.speaker === 'VAPI Agent' ? 'blue' : 'green'}`}>
-                {t.speaker === 'VAPI Agent' ? 'V' : 'U'}
-              </div>
-              <div>
-                <span className="dashboard-activity-name">{t.speaker}</span>
-                <span className="dashboard-activity-time">{t.time}</span>
-                <p>{t.text}</p>
-              </div>
-            </div>
-          ))}
-          {sentMessages.map((msg) => (
-            <div key={msg.id} className="dashboard-activity-item dashboard-activity-item-sent">
-              <img src="/strange.jpeg" alt="You" className="dashboard-activity-avatar avatar-you-img" />
-              <div>
-                <span className="dashboard-activity-name">You</span>
-                <span className="dashboard-activity-time">{msg.time}</span>
-                <p>{msg.text}</p>
-              </div>
-            </div>
-          ))}
+          {isLoading ? (
+            <ActivitySkeleton />
+          ) : (
+            <>
+              {activity.map((a, i) => (
+                <div key={i} className="dashboard-activity-item">
+                  <div className={`dashboard-activity-avatar avatar-${a.color}`}>{a.name[0]}</div>
+                  <div>
+                    <span className="dashboard-activity-name">{a.name}</span>
+                    <span className="dashboard-activity-time">{a.time}</span>
+                    <p>{a.text}</p>
+                  </div>
+                </div>
+              ))}
+              {liveTranscript.map((t, i) => (
+                <div key={i} className="dashboard-activity-item">
+                  <div className={`dashboard-activity-avatar avatar-${t.speaker === 'VAPI Agent' ? 'blue' : 'green'}`}>
+                    {t.speaker === 'VAPI Agent' ? 'V' : 'U'}
+                  </div>
+                  <div>
+                    <span className="dashboard-activity-name">{t.speaker}</span>
+                    <span className="dashboard-activity-time">{t.time}</span>
+                    <p>{t.text}</p>
+                  </div>
+                </div>
+              ))}
+              {sentMessages.map((msg) => (
+                <div key={msg.id} className="dashboard-activity-item dashboard-activity-item-sent">
+                  <img src="/strange.jpeg" alt="You" className="dashboard-activity-avatar avatar-you-img" />
+                  <div>
+                    <span className="dashboard-activity-name">You</span>
+                    <span className="dashboard-activity-time">{msg.time}</span>
+                    <p>{msg.text}</p>
+                  </div>
+                </div>
+              ))}
+            </>
+          )}
         </div>
         <div className="dashboard-message-input">
           <textarea
