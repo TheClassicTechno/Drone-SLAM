@@ -198,6 +198,15 @@ export default function Dashboard() {
           </div>
         </header>
 
+        <div className="dashboard-phone-banner">
+          <div className="phone-banner-icon">📞</div>
+          <div className="phone-banner-content">
+            <h3>Need an Emergency Delivery?</h3>
+            <p>Call our 24/7 voice agent to order medication</p>
+            <a href="tel:+16502527766" className="phone-banner-number">+1 (650) 252-7766</a>
+          </div>
+        </div>
+
         <section className="dashboard-list">
           <div className="dashboard-list-header">
             <h2>Active Deliveries</h2>

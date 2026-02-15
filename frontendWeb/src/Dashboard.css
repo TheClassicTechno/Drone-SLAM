@@ -242,6 +242,76 @@
   color: rgba(245, 242, 237, 0.6);
 }
 
+/* Phone Banner */
+.dashboard-phone-banner {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 1.5rem 1.75rem;
+  margin-bottom: 2rem;
+  background: linear-gradient(135deg, 
+    rgba(167, 139, 250, 0.15) 0%, 
+    rgba(56, 189, 248, 0.12) 100%);
+  border: 1px solid rgba(167, 139, 250, 0.3);
+  border-radius: 1rem;
+  backdrop-filter: blur(12px);
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 20px rgba(167, 139, 250, 0.1);
+}
+
+.dashboard-phone-banner:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 28px rgba(167, 139, 250, 0.2);
+}
+
+.phone-banner-icon {
+  font-size: 2rem;
+  filter: drop-shadow(0 2px 8px rgba(167, 139, 250, 0.4));
+  animation: phone-pulse 2s ease-in-out infinite;
+}
+
+@keyframes phone-pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+.phone-banner-content {
+  flex: 1;
+}
+
+.phone-banner-content h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-cream);
+  margin: 0 0 0.25rem 0;
+}
+
+.phone-banner-content p {
+  font-size: 0.85rem;
+  color: rgba(245, 242, 237, 0.6);
+  margin: 0 0 0.5rem 0;
+}
+
+.phone-banner-number {
+  display: inline-block;
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #a78bfa;
+  text-decoration: none;
+  transition: color 0.2s, transform 0.2s;
+  letter-spacing: 0.02em;
+}
+
+.phone-banner-number:hover {
+  color: #38bdf8;
+  transform: scale(1.05);
+}
+
 /* KPIs */
 .dashboard-kpis {
   display: grid;

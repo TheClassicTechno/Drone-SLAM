@@ -47,6 +47,16 @@ export default function LandingPage() {
             Reaching geographically deprived communities with voice agents,
             facial identification, and SLAM mapping—so no one is left behind.
           </p>
+          
+          <div className="hero-phone-box">
+            <div className="phone-icon">📞</div>
+            <div className="phone-content">
+              <p className="phone-label">Order Emergency Medicine Now</p>
+              <a href="tel:+16502527766" className="phone-number">+1 (650) 252-7766</a>
+              <p className="phone-subtitle">Voice-controlled drone delivery • Available 24/7</p>
+            </div>
+          </div>
+          
           <div className="hero-cta">
             <Link to="/dashboard" className="btn btn-primary">
               Explore the platform
