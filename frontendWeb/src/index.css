@@ -1,0 +1,31 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --color-accent: #e8b86d;
+  --color-accent-soft: #f0c97a;
+  --color-slate: #1a1f2e;
+  --color-charcoal: #252b3b;
+  --color-cream: #f5f2ed;
+  --color-warm: #8f571c;
+  --color-coral: #cb5e40;
+  --font-display: 'Sora', sans-serif;
+  --font-body: 'Plus Jakarta Sans', sans-serif;
+  --glass-bg: rgba(255, 255, 255, 0.06);
+  --glass-border: rgba(255, 255, 255, 0.12);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--color-slate);
+  color: var(--color-cream);
+  overflow-x: hidden;
+  line-height: 1.6;
+}
