@@ -37,12 +37,18 @@ load_dotenv()
 # Initialize FastAPI application
 app = FastAPI(title="Medical Drone Voice Agent Webhook")
 
-# CORS: localhost + Vercel production app + optional env (comma-separated extras)
+# CORS: localhost (any port) + Vercel production app + optional env (comma-separated extras)
 _cors_origins = [
     "http://localhost:5173",
+    "http://localhost:5174",
     "http://127.0.0.1:5173",
+    "http://127.0.0.1:5174",
     "https://drone-slam.vercel.app",
 ]
+# Allow any localhost origin for dev (e.g. 5175, 5176)
+import re
+def _is_localhost_origin(origin: str) -> bool:
+    return bool(origin and re.match(r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$", origin))
 _extra = os.getenv("CORS_ORIGINS", "")
 if _extra:
     for o in _extra.split(","):
@@ -50,9 +56,13 @@ if _extra:
         if o:
             _cors_origins.append(o)
 
+# Allow any localhost port for dev (e.g. 5173, 5174, 5175)
+_cors_origin_regex = r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$"
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_cors_origins,
+    allow_origin_regex=_cors_origin_regex,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -403,7 +413,7 @@ async def handle_vapi_webhook(request: Request):
                     print(f"⚠️ Error sending notification: {str(e)}")
                     # Continue processing - notifications are not critical to core functionality
             else:
-                print(f"ℹ️ No order found for this call - skipping notifications")
+                print(f"ℹ️ No completed order for this call (normal for short/test calls) - skipping notifications")
 
             # TODO: Store in database for analytics/compliance
             # save_call_record(call_data)
@@ -453,12 +463,22 @@ async def handle_vapi_webhook(request: Request):
             conv_data = data.get("message", {})
             # Support both message.conversation and message.artifact.messages (Vapi payloads vary)
             conversation = conv_data.get("conversation") or conv_data.get("artifact", {}).get("messages") or []
+            if not conversation:
+                print(f"  (conversation-update: no messages in payload)")
             # Find the last user or assistant message (skip system messages)
             for msg in reversed(conversation):
                 role = msg.get("role", "")
                 if role in ["user", "assistant"]:
-                    content = msg.get("content", "") or msg.get("message", "")
-                    if content and isinstance(content, str):
+                    raw = msg.get("content", "") or msg.get("message", "")
+                    # Content can be string or list of parts e.g. [{"type":"text","text":"..."}]
+                    if isinstance(raw, list):
+                        content = " ".join(
+                            p.get("text", p) if isinstance(p, dict) else str(p)
+                            for p in raw
+                        ).strip()
+                    else:
+                        content = raw if isinstance(raw, str) else ""
+                    if content:
                         timestamp = datetime.now().strftime("%I:%M %p")
                         speaker = "VAPI Agent" if role == "assistant" else "User"
                         transcript_entry = {
@@ -628,7 +648,7 @@ async def get_live_transcript(request: Request):
         "Connection": "keep-alive",
         "X-Accel-Buffering": "no",
     }
-    if origin and origin in _cors_origins:
+    if origin and (origin in _cors_origins or _is_localhost_origin(origin)):
         headers["Access-Control-Allow-Origin"] = origin
         headers["Access-Control-Allow-Credentials"] = "true"
 

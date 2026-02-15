@@ -20,9 +20,8 @@ export default function Dashboard() {
     return () => clearTimeout(timer)
   }, [])
 
-  // Connect to live transcript SSE: env var, else localhost in dev, else Render in production
-  const isLocalDev = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-  const apiBase = import.meta.env.VITE_API_URL || (isLocalDev ? 'http://localhost:8000' : 'https://drone-slam.onrender.com')
+  // Connect to live transcript SSE: always use Render (stable public URL) so both localhost and Vercel see transcripts
+  const apiBase = import.meta.env.VITE_API_URL || 'https://drone-slam.onrender.com'
   useEffect(() => {
     const eventSource = new EventSource(`${apiBase.replace(/\/$/, '')}/live-transcript`)
 
