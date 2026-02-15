@@ -1637,3 +1637,35 @@
 /ROS/ccmslam_ws/src/kitti_player/
 /ROS/ccmslam_ws/src/flock/.git/
 /ROS/tello_catkin_ws/camera_calibaration_data/Tello/calibrationdata_*
+# ==========================================
+# Voice Agent - Sensitive Files
+# ==========================================
+
+# Environment variables (contains API keys - NEVER commit!)
+.env
+.env.local
+.env.*.local
+
+# Python virtual environment
+venv/
+env/
+ENV/
+.venv
+
+# Python compiled files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Assistant ID (can be regenerated)
+voice_agent/assistant_id.txt
+
+# IDE
+.vscode/
+.idea/
+
+# macOS
+.DS_Store
+
+# Logs
+*.log

@@ -339,38 +339,44 @@ We integrated a voice AI agent using **Vapi** that allows doctors to order medic
 - Automatic drone selection and dispatch
 - Order tracking with confirmation codes
 - Warm, caring, patient voice tone
-- **Post-call confirmations** via Poke.com (email, SMS, calendar)
+- **Post-call email notifications** via Cloudflare Workers (TreeHacks sponsor!)
 
-### Post-Call Notifications (Poke.com Integration)
+### Post-Call Email Notifications (Cloudflare Integration)
 
-After each voice call completes, the system automatically sends:
+After each voice call completes, the system automatically sends professional email confirmations using **Cloudflare Workers** and **MailChannels** (free email API).
 
-- **Email Confirmation** - Professional order summary with tracking code and ETA
-- **Calendar Event** - Automatic delivery reminder in doctor's calendar
-- **SMS Updates** - Real-time tracking notifications to mobile phone
-- **Task Creation** - Pickup reminder in task management system
+**Features:**
 
-This provides complete documentation trail for medical compliance and ensures doctors never miss a delivery.
+- 📧 **Professional HTML emails** with order details, tracking code, and ETA
+- ⚡ **Instant delivery** via Cloudflare's global edge network
+- 💰 **Free** - No cost for email sending
+- 🏆 **TreeHacks sponsor** - Eligible for Cloudflare prize ($250K credits!)
 
-**Configuration:**
+**Quick Setup:**
 
-1. Add Poke.com API key to `.env`:
-
-   ```bash
-   POKE_API_KEY=your_poke_api_key
-   TEST_EMAIL=doctor@hospital.com
-   TEST_PHONE=+1234567890
-   ```
-
-2. Test the integration:
+1. Deploy Cloudflare Worker (10 minutes):
 
    ```bash
-   python test_poke_integration.py
+   npm install -g wrangler
+   wrangler login
+   cd voice_agent
+   wrangler deploy cloudflare_worker.js --name medical-drone-email
    ```
 
-3. Notifications trigger automatically after VAPI calls end
+2. Update `.env` with Worker URL:
 
-See `voice_agent/POKE_INTEGRATION_SPEC.md` for detailed technical documentation.
+   ```bash
+   CLOUDFLARE_WORKER_URL=https://medical-drone-email.your-subdomain.workers.dev
+   ENABLE_CLOUDFLARE_NOTIFICATIONS=true
+   ```
+
+3. Test it:
+
+   ```bash
+   python test_cloudflare.py
+   ```
+
+See `voice_agent/CLOUDFLARE_SETUP.md` for detailed setup instructions.
 
 ### Quick Start
 
@@ -396,7 +402,8 @@ python vapi_setup_simple.py create
 ```
 Phone Call → Vapi → Groq LLM → Webhook Server → Drone Dispatcher → Tello Fleet
                                        ↓
-                                  Poke.com → Email / Calendar / SMS / Tasks
+                              Cloudflare Worker → MailChannels → Email 📧
+                                (Edge Network)        (Free)
 ```
 
 See `voice_agent/README.md` for detailed documentation.
