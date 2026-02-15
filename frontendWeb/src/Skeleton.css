@@ -1,0 +1,99 @@
+/* Loading Skeleton Styles */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(139, 92, 246, 0.1) 0%,
+    rgba(139, 92, 246, 0.2) 50%,
+    rgba(139, 92, 246, 0.1) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s ease-in-out infinite;
+  border-radius: 0.5rem;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.skeleton-line {
+  height: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.skeleton-line:last-child {
+  margin-bottom: 0;
+}
+
+.skeleton-delivery {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.skeleton-delivery-icon {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+}
+
+.skeleton-delivery-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.skeleton-delivery-title {
+  height: 1.25rem;
+  width: 70%;
+}
+
+.skeleton-delivery-status {
+  height: 1rem;
+  width: 40%;
+}
+
+.skeleton-activity {
+  padding: 0.75rem 1rem;
+  border-left: 3px solid rgba(139, 92, 246, 0.3);
+  margin-bottom: 0.75rem;
+  background: rgba(139, 92, 246, 0.05);
+  border-radius: 0.5rem;
+}
+
+.skeleton-activity-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.skeleton-activity-name {
+  height: 1rem;
+  width: 30%;
+}
+
+.skeleton-activity-time {
+  height: 0.875rem;
+  width: 15%;
+}
+
+.skeleton-activity-text {
+  height: 1rem;
+  width: 90%;
+}
+
+.skeleton-activity-text.short {
+  width: 60%;
+  margin-top: 0.25rem;
+}
