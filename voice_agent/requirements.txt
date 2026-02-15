@@ -1,0 +1,26 @@
+# Voice Agent Dependencies
+
+# Core frameworks
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+python-dotenv==1.0.0
+
+# Vapi SDK
+vapi-python==0.1.0
+
+# HTTP client
+requests==2.31.0
+httpx==0.26.0
+
+# Optional: For ngrok integration (easier testing)
+pyngrok==7.0.5
+
+# Optional: If you want to add a nice CLI
+rich==13.7.0
+
+# Optional: Database (if you want to persist orders)
+# sqlalchemy==2.0.25
+# psycopg2-binary==2.9.9  # For PostgreSQL
+
+# Optional: For SMS notifications
+# twilio==8.11.1
