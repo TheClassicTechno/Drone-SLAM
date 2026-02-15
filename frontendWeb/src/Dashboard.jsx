@@ -20,9 +20,11 @@ export default function Dashboard() {
     return () => clearTimeout(timer)
   }, [])
 
-  // Connect to live transcript SSE endpoint
+  // Connect to live transcript SSE: env var, else localhost in dev, else Render in production
+  const isLocalDev = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+  const apiBase = import.meta.env.VITE_API_URL || (isLocalDev ? 'http://localhost:8000' : 'https://drone-slam.onrender.com')
   useEffect(() => {
-    const eventSource = new EventSource('http://localhost:8000/live-transcript')
+    const eventSource = new EventSource(`${apiBase.replace(/\/$/, '')}/live-transcript`)
 
     eventSource.onopen = () => {
       setIsConnected(true)
@@ -43,7 +45,7 @@ export default function Dashboard() {
       eventSource.close()
       setIsConnected(false)
     }
-  }, [])
+  }, [apiBase])
 
   useEffect(() => {
     const el = textareaRef.current
