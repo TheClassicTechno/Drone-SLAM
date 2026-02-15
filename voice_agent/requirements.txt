@@ -8,7 +8,7 @@ python-dotenv==1.0.0
 # Vapi SDK
 vapi-python==0.1.0
 
-# HTTP client
+# HTTP client (also used for Poke.com API integration)
 requests==2.31.0
 httpx==0.26.0
 
