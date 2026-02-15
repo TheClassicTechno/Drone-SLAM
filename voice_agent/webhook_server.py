@@ -37,10 +37,22 @@ load_dotenv()
 # Initialize FastAPI application
 app = FastAPI(title="Medical Drone Voice Agent Webhook")
 
-# Add CORS middleware for frontend
+# CORS: localhost + Vercel production app + optional env (comma-separated extras)
+_cors_origins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "https://drone-slam.vercel.app",
+]
+_extra = os.getenv("CORS_ORIGINS", "")
+if _extra:
+    for o in _extra.split(","):
+        o = o.strip().rstrip("/")  # no trailing slash; browser sends origin without it
+        if o:
+            _cors_origins.append(o)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=_cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -612,10 +624,6 @@ async def get_live_transcript():
             "Cache-Control": "no-cache",
             "Connection": "keep-alive",
             "X-Accel-Buffering": "no",
-            "Access-Control-Allow-Origin": "http://localhost:5173",
-            "Access-Control-Allow-Credentials": "true",
-            "Access-Control-Allow-Methods": "GET, OPTIONS",
-            "Access-Control-Allow-Headers": "*"
         }
     )
 
@@ -676,8 +684,8 @@ async def simulate_order(order: Dict):
 
 
 if __name__ == "__main__":
-    # Get port from environment variable or default to 8000
-    port = int(os.getenv("SERVER_PORT", 8000))
+    # PORT is set by Railway/Render/Fly; SERVER_PORT for local
+    port = int(os.getenv("PORT") or os.getenv("SERVER_PORT", "8000"))
 
     # Display server startup information
     print(f"\nStarting Medical Drone Voice Agent Webhook Server")

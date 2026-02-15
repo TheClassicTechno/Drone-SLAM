@@ -1,0 +1,22 @@
+# Render Blueprint: Webhook server for Vapi (live transcript + /vapi-webhook)
+# Deploy: connect this repo at render.com → New → Blueprint → paste this repo
+# Then set env vars in Render dashboard (see DEPLOYMENT.md).
+
+services:
+  - type: web
+    name: drone-slam-webhook
+    rootDir: voice_agent
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn webhook_server:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: CORS_ORIGINS
+        sync: false
+      - key: VAPI_API_KEY
+        sync: false
+      - key: ZOOM_WEBHOOK_URL
+        sync: false
+      - key: ZOOM_API_KEY
+        sync: false
+      - key: ZOOM_API_SECRET
+        sync: false
