@@ -272,12 +272,7 @@ CCM-SLAM enables multiple drones to:
 - README_MEDWING.md: Detailed technical documentation
 - ARCHITECTURE.md: System architecture diagrams
 
-## Development Team
 
-- Juli: ROS/SLAM integration, drone control systems
-- Mariana: Voice AI backend, API development
-- Kimberly: Frontend development, UX design
-- Mao Yu: Computer vision, facial recognition
 
 ## Technical Documentation
 
