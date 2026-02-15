@@ -317,6 +317,90 @@ echo "source $PWD/devel/setup.bash" >> ~/.bashrc
 source ~/.bashrc
 ```
 
+## Voice Agent - Medical Drone Dispatcher
+
+We integrated a voice AI agent using **Vapi** that allows doctors to order medical supplies via phone calls. The system uses natural language processing to take medication orders and automatically dispatch drones for delivery.
+
+### Tech Stack
+
+- **Vapi** - Voice AI platform for phone call handling
+- **Groq (Llama 3.3 70B)** - Ultra-fast LLM for 0.2s response times
+- **Deepgram Nova-2-Medical** - Medical-grade speech recognition
+- **ElevenLabs Rachel** - Natural text-to-speech voice
+- **FastAPI** - Webhook server for order processing
+- **ngrok** - Secure tunnel for local development
+
+### Features
+
+- Real-time voice ordering via phone
+- Medical terminology recognition with 95%+ accuracy
+- Medication name spelling confirmation for safety
+- STAT/urgent/routine priority handling
+- Automatic drone selection and dispatch
+- Order tracking with confirmation codes
+- Warm, caring, patient voice tone
+- **Post-call confirmations** via Poke.com (email, SMS, calendar)
+
+### Post-Call Notifications (Poke.com Integration)
+
+After each voice call completes, the system automatically sends:
+
+- **Email Confirmation** - Professional order summary with tracking code and ETA
+- **Calendar Event** - Automatic delivery reminder in doctor's calendar
+- **SMS Updates** - Real-time tracking notifications to mobile phone
+- **Task Creation** - Pickup reminder in task management system
+
+This provides complete documentation trail for medical compliance and ensures doctors never miss a delivery.
+
+**Configuration:**
+
+1. Add Poke.com API key to `.env`:
+
+   ```bash
+   POKE_API_KEY=your_poke_api_key
+   TEST_EMAIL=doctor@hospital.com
+   TEST_PHONE=+1234567890
+   ```
+
+2. Test the integration:
+
+   ```bash
+   python test_poke_integration.py
+   ```
+
+3. Notifications trigger automatically after VAPI calls end
+
+See `voice_agent/POKE_INTEGRATION_SPEC.md` for detailed technical documentation.
+
+### Quick Start
+
+```bash
+# Setup voice agent
+cd voice_agent
+pip install -r requirements.txt
+
+# Start webhook server
+python webhook_server.py
+
+# Expose with ngrok
+ngrok http 8000
+
+# Create Vapi assistant
+python vapi_setup_simple.py create
+
+# Call your Vapi number to test!
+```
+
+### Architecture
+
+```
+Phone Call → Vapi → Groq LLM → Webhook Server → Drone Dispatcher → Tello Fleet
+                                       ↓
+                                  Poke.com → Email / Calendar / SMS / Tasks
+```
+
+See `voice_agent/README.md` for detailed documentation.
+
 ## Notes
 ### Flock
 we have used code from https://github.com/clydemcqueen/flock
