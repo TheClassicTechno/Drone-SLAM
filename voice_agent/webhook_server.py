@@ -19,17 +19,36 @@ from typing import Dict, List
 from dotenv import load_dotenv
 
 from fastapi import FastAPI, Request, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
+import asyncio
+from collections import deque
 
 # Import your existing drone control (placeholder for future integration)
 # from your_drone_system import DroneDispatcher
+
+# Import Zoom notification service for post-call confirmations (TreeHacks sponsor!)
+from zoom_notifications import zoom_service
 
 # Load environment variables from .env file
 load_dotenv()
 
 # Initialize FastAPI application
 app = FastAPI(title="Medical Drone Voice Agent Webhook")
+
+# Add CORS middleware for frontend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Live transcription storage
+live_transcript = deque(maxlen=100)  # Keep last 100 messages
+sse_clients = []  # Connected SSE clients
 
 # In-memory storage for orders and drone fleet
 # TODO: Replace with persistent database (PostgreSQL, MongoDB, etc.) in production
@@ -244,13 +263,27 @@ async def handle_vapi_webhook(request: Request):
         print(f"\nWebhook received: {message_type}")
 
         # Handle function call event - this is when assistant wants to dispatch a drone
-        if message_type == "function-call":
-            function_call = data["message"]["functionCall"]
-            function_name = function_call["name"]
+        # VAPI may send either "function-call" or "tool-calls"
+        if message_type in ["function-call", "tool-calls"]:
+            # Debug: print the raw event data
+            print(f"\n🔍 DEBUG: tool-calls event received")
+            print(f"   Raw message: {json.dumps(data['message'], indent=2)[:500]}")
+
+            # Handle both old and new VAPI event formats
+            function_call = data["message"].get("functionCall") or data["message"].get("toolCalls", [{}])[0]
+            print(f"   Extracted function_call: {function_call}")
+
+            # Extract function name from nested structure
+            if function_call:
+                # New format: toolCalls[0].function.name
+                function_name = function_call.get("function", {}).get("name") or function_call.get("name")
+            else:
+                function_name = None
+            print(f"   Function name: {function_name}")
 
             if function_name == "dispatch_drone":
-                # Extract order data from function parameters
-                order_data = function_call["parameters"]
+                # Extract order data from function parameters (handle both formats)
+                order_data = function_call.get("parameters") or function_call.get("function", {}).get("arguments", {})
 
                 # Log incoming order
                 print(f"\nORDER RECEIVED VIA VOICE CALL")
@@ -311,10 +344,119 @@ async def handle_vapi_webhook(request: Request):
             print(f"{transcript[:200]}..." if len(transcript) > 200 else transcript)
             print(f"=" * 40 + "\n")
 
+            # Send post-call email notification via Cloudflare (TreeHacks sponsor!)
+            # Find order associated with this call (if any)
+            call_id = call_data.get('callId', '')
+            order_for_call = None
+
+            # Search through active orders to find one from this call
+            for order_id, order in active_orders.items():
+                # Match by timestamp proximity (order created during the call)
+                order_time = datetime.fromisoformat(order['timestamp'])
+                call_ended = datetime.now()
+                time_diff = (call_ended - order_time).total_seconds()
+
+                # If order was created within last 10 minutes, it's likely from this call
+                if time_diff < 600 and order.get('status') == 'dispatched':
+                    order_for_call = order
+                    break
+
+            # Send chat notification if order found
+            if order_for_call:
+                print(f"\n💬 Sending Zoom chat notification for order {order_for_call['confirmation_code']}...")
+                try:
+                    # Add transcript to order data for notification
+                    order_for_call['transcript'] = transcript
+                    order_for_call['call_duration'] = call_data.get('durationSeconds', 0)
+
+                    # Send chat notification via Zoom webhook
+                    notification_result = zoom_service.send_order_notification(
+                        order_data=order_for_call
+                    )
+
+                    if notification_result.get('status') == 'success':
+                        print(f"✅ Chat notification sent via Zoom!")
+                    elif notification_result.get('status') == 'disabled':
+                        print(f"ℹ️ Zoom notifications are disabled")
+                    else:
+                        print(f"⚠️ Chat notification failed: {notification_result.get('error')}")
+
+                except Exception as e:
+                    print(f"⚠️ Error sending notification: {str(e)}")
+                    # Continue processing - notifications are not critical to core functionality
+            else:
+                print(f"ℹ️ No order found for this call - skipping notifications")
+
             # TODO: Store in database for analytics/compliance
             # save_call_record(call_data)
 
-        # Handle real-time transcript updates
+        # Handle real-time speech updates (VAPI transcription)
+        elif message_type == "speech-update":
+            speech_data = data["message"]
+            role = speech_data.get("role", "unknown")
+            status = speech_data.get("status", "")
+
+            # Only process completed speech segments
+            if status == "stopped":
+                # Extract transcript from artifact.messages
+                artifact = speech_data.get("artifact", {})
+                messages = artifact.get("messages", [])
+
+                # Find the last message from this role
+                transcript_msg = ""
+                for msg in reversed(messages):
+                    if msg.get("role") == role:
+                        transcript_msg = msg.get("content", "")
+                        break
+
+                if transcript_msg:
+                    timestamp = datetime.now().strftime("%I:%M %p")
+
+                    # Determine speaker
+                    speaker = "VAPI Agent" if role == "assistant" else "User"
+
+                    # Add to live transcript
+                    transcript_entry = {
+                        "speaker": speaker,
+                        "text": transcript_msg,
+                        "time": timestamp,
+                        "role": role
+                    }
+                    live_transcript.append(transcript_entry)
+
+                    # Print to terminal
+                    print(f"\n🎙️ [{speaker}] {timestamp}: {transcript_msg}")
+
+                    # Broadcast to SSE clients
+                    asyncio.create_task(broadcast_transcript(transcript_entry))
+
+        # Handle conversation updates
+        elif message_type == "conversation-update":
+            conv_data = data["message"]
+            # Extract last message if available
+            if "conversation" in conv_data:
+                conversation = conv_data.get("conversation", [])
+                # Find the last user or assistant message (skip system messages)
+                for msg in reversed(conversation):
+                    role = msg.get("role", "")
+                    if role in ["user", "assistant"]:
+                        content = msg.get("content", "")
+                        if content:
+                            timestamp = datetime.now().strftime("%I:%M %p")
+                            speaker = "VAPI Agent" if role == "assistant" else "User"
+
+                            transcript_entry = {
+                                "speaker": speaker,
+                                "text": content,
+                                "time": timestamp,
+                                "role": role
+                            }
+                            live_transcript.append(transcript_entry)
+                            print(f"\n🎙️ [{speaker}] {timestamp}: {content}")
+                            asyncio.create_task(broadcast_transcript(transcript_entry))
+                            break  # Only process the last message
+
+        # Handle real-time transcript updates (older format)
         elif message_type == "transcript":
             transcript_data = data["message"]
             role = transcript_data.get("role", "unknown")
@@ -335,6 +477,13 @@ async def handle_vapi_webhook(request: Request):
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
+
+
+async def broadcast_transcript(entry: Dict):
+    """Broadcast transcript entry to all connected SSE clients"""
+    message = f"data: {json.dumps(entry)}\n\n"
+    for queue in sse_clients:
+        await queue.put(message)
 
 
 def validate_order(order_data: Dict) -> Dict:
@@ -429,6 +578,52 @@ async def get_drones():
         "available": sum(1 for d in drone_fleet.values() if d["status"] == "available"),
         "drones": drone_fleet
     }
+
+
+@app.get("/live-transcript")
+async def get_live_transcript():
+    """
+    SSE endpoint for live transcription updates
+
+    Frontend connects to this endpoint to receive real-time
+    speech-to-text updates as they happen during VAPI calls
+    """
+    async def event_generator():
+        queue = asyncio.Queue()
+        sse_clients.append(queue)
+
+        try:
+            # Send recent transcript history
+            for entry in live_transcript:
+                yield f"data: {json.dumps(entry)}\n\n"
+
+            # Stream new updates
+            while True:
+                message = await queue.get()
+                yield message
+        except asyncio.CancelledError:
+            sse_clients.remove(queue)
+            raise
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+            "Access-Control-Allow-Origin": "http://localhost:5173",
+            "Access-Control-Allow-Credentials": "true",
+            "Access-Control-Allow-Methods": "GET, OPTIONS",
+            "Access-Control-Allow-Headers": "*"
+        }
+    )
+
+
+@app.get("/transcript-history")
+async def get_transcript_history():
+    """Get recent transcript history"""
+    return {"transcript": list(live_transcript)}
 
 
 @app.post("/simulate-order")
