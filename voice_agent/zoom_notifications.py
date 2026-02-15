@@ -33,15 +33,15 @@ class ZoomNotificationService:
         self.enabled = os.getenv('ENABLE_ZOOM_NOTIFICATIONS', 'true').lower() == 'true'
 
         if self.enabled and not self.webhook_url:
-            print("⚠️ ZOOM_WEBHOOK_URL not set - notifications disabled")
+            print("ℹ️ ZOOM_WEBHOOK_URL not set - Zoom chat notifications disabled (optional)")
             self.enabled = False
 
         if self.enabled and not self.verification_token:
-            print("⚠️ ZOOM_VERIFICATION_TOKEN not set - notifications disabled")
+            print("ℹ️ ZOOM_VERIFICATION_TOKEN not set - Zoom notifications disabled (optional)")
             self.enabled = False
 
         print(f"✅ Zoom Notification Service initialized")
-        print(f"   Chat notifications: {'enabled' if self.enabled else 'disabled'}")
+        print(f"   Chat notifications: {'enabled' if self.enabled else 'disabled (optional)'}")
         if self.enabled:
             print(f"   Webhook configured: {self.webhook_url[:50]}...")
 
