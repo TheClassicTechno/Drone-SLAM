@@ -450,29 +450,27 @@ async def handle_vapi_webhook(request: Request):
 
         # Handle conversation updates
         elif message_type == "conversation-update":
-            conv_data = data["message"]
-            # Extract last message if available
-            if "conversation" in conv_data:
-                conversation = conv_data.get("conversation", [])
-                # Find the last user or assistant message (skip system messages)
-                for msg in reversed(conversation):
-                    role = msg.get("role", "")
-                    if role in ["user", "assistant"]:
-                        content = msg.get("content", "")
-                        if content:
-                            timestamp = datetime.now().strftime("%I:%M %p")
-                            speaker = "VAPI Agent" if role == "assistant" else "User"
-
-                            transcript_entry = {
-                                "speaker": speaker,
-                                "text": content,
-                                "time": timestamp,
-                                "role": role
-                            }
-                            live_transcript.append(transcript_entry)
-                            print(f"\n🎙️ [{speaker}] {timestamp}: {content}")
-                            asyncio.create_task(broadcast_transcript(transcript_entry))
-                            break  # Only process the last message
+            conv_data = data.get("message", {})
+            # Support both message.conversation and message.artifact.messages (Vapi payloads vary)
+            conversation = conv_data.get("conversation") or conv_data.get("artifact", {}).get("messages") or []
+            # Find the last user or assistant message (skip system messages)
+            for msg in reversed(conversation):
+                role = msg.get("role", "")
+                if role in ["user", "assistant"]:
+                    content = msg.get("content", "") or msg.get("message", "")
+                    if content and isinstance(content, str):
+                        timestamp = datetime.now().strftime("%I:%M %p")
+                        speaker = "VAPI Agent" if role == "assistant" else "User"
+                        transcript_entry = {
+                            "speaker": speaker,
+                            "text": content,
+                            "time": timestamp,
+                            "role": role
+                        }
+                        live_transcript.append(transcript_entry)
+                        print(f"\n🎙️ [{speaker}] {timestamp}: {content}")
+                        asyncio.create_task(broadcast_transcript(transcript_entry))
+                        break  # Only process the last message
 
         # Handle real-time transcript updates (older format)
         elif message_type == "transcript":

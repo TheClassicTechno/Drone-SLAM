@@ -44,8 +44,8 @@ You must set **Build** and **Start** (often under “Advanced” or in a second 
 
 | Field | Value |
 |-------|--------|
-| **Build Command** | `pip install -r requirements.txt` |
-| **Start Command** | `uvicorn webhook_server:app --host 0.0.0.0 --port $PORT` |
+| **Build Command** | `cd voice_agent && pip install -r requirements.txt` |
+| **Start Command** | `cd voice_agent && uvicorn webhook_server:app --host 0.0.0.0 --port $PORT` |
 
 **Environment Variables** — click “Add Environment Variable” for each:
 
@@ -124,3 +124,34 @@ then either the frontend is still using localhost, or the backend is not allowin
   - `CORS_ORIGINS` = `https://drone-slam.vercel.app`  
   (use your real Vercel URL; add multiple origins comma-separated if you have several, e.g. preview URLs).
 - **Save** so Render redeploys. Then reload the Vercel dashboard and try again.
+
+---
+
+## Transcript not on website? (webhooks going to local)
+
+If the transcript appears in your **terminal** (e.g. `tail -f /tmp/webhook_server_new.log`) but **not** on https://drone-slam.vercel.app/dashboard, Vapi is still sending webhooks to your **local** server (or ngrok), not to Render. The dashboard only shows what **Render** receives.
+
+**Fix (do in order):**
+
+1. **Point Vapi at Render**
+   ```bash
+   cd voice_agent
+   python set_vapi_server_url.py
+   ```
+   (Uses `VAPI_API_KEY` and `VAPI_PHONE_NUMBER_ID` from `.env`.)
+
+2. **Stop your local webhook server** so only Render receives webhooks:
+   - **Option A:** In the terminal where you ran `python webhook_server.py`, press **Ctrl+C**.
+   - **Option B:** Run from repo root:
+     ```bash
+     cd voice_agent && bash stop_local_webhook.sh
+     ```
+   - **Option C:** Stop ngrok if you use it (so the old public URL no longer reaches your machine).
+
+3. **Test**
+   - Open https://drone-slam.vercel.app/dashboard (should show **Live Connected**).
+   - Call your Vapi number. The transcript should appear on the dashboard.
+   - In **Render** → your service → **Logs**, you should see `Webhook received: conversation-update` and `POST /vapi-webhook HTTP/1.1` 200.
+
+4. **Deploy latest code to Render** (so the fork has the latest webhook logic):
+   - Push your branch to **marianaisaw/Drone-SLAM**, then update the **TheClassicTechno/Drone-SLAM** fork (e.g. Sync fork or push to that remote). Render will redeploy from the fork.
