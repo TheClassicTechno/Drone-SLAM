@@ -250,6 +250,12 @@ class DroneDispatcher:
 dispatcher = DroneDispatcher()
 
 
+@app.get("/vapi-webhook")
+async def vapi_webhook_health():
+    """Allow GET so Vapi (and other tools) can validate the webhook URL; returns 200."""
+    return {"status": "ok", "service": "Medical Drone Voice Agent", "webhook": "vapi"}
+
+
 @app.post("/vapi-webhook")
 async def handle_vapi_webhook(request: Request):
     """
@@ -593,7 +599,7 @@ async def get_drones():
 
 
 @app.get("/live-transcript")
-async def get_live_transcript():
+async def get_live_transcript(request: Request):
     """
     SSE endpoint for live transcription updates
 
@@ -617,14 +623,21 @@ async def get_live_transcript():
             sse_clients.remove(queue)
             raise
 
+    # Explicit CORS for SSE: browser requires exact origin match
+    origin = request.headers.get("origin", "")
+    headers = {
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+        "X-Accel-Buffering": "no",
+    }
+    if origin and origin in _cors_origins:
+        headers["Access-Control-Allow-Origin"] = origin
+        headers["Access-Control-Allow-Credentials"] = "true"
+
     return StreamingResponse(
         event_generator(),
         media_type="text/event-stream",
-        headers={
-            "Cache-Control": "no-cache",
-            "Connection": "keep-alive",
-            "X-Accel-Buffering": "no",
-        }
+        headers=headers,
     )
 
 
