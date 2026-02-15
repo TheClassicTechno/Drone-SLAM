@@ -49,21 +49,53 @@ export default function Dashboard() {
       time: m.time
     }))]
 
-    // Format as text
-    const transcriptText = allTranscripts
-      .map(t => `[${t.speaker || t.name}] ${t.time}: ${t.text}`)
-      .join('\n')
+    if (allTranscripts.length === 0) {
+      alert('No transcripts to save')
+      return
+    }
 
-    // Create downloadable file
-    const blob = new Blob([transcriptText], { type: 'text/plain' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `medwing-transcripts-${new Date().toISOString().slice(0, 10)}.txt`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
+    // Deduplicate: Remove incremental duplicates
+    // Keep only the longest message from each speaker at each timestamp
+    const deduped = []
+    const seen = new Map() // key: speaker+time, value: index in deduped array
+
+    for (const transcript of allTranscripts) {
+      const key = `${transcript.speaker || transcript.name}|${transcript.time}`
+      const existingIndex = seen.get(key)
+
+      if (existingIndex !== undefined) {
+        // Already have a message from this speaker at this time
+        // Keep the longer one (more complete)
+        if (transcript.text.length > deduped[existingIndex].text.length) {
+          deduped[existingIndex] = transcript
+        }
+      } else {
+        // New speaker+time combination
+        seen.set(key, deduped.length)
+        deduped.push(transcript)
+      }
+    }
+
+    // Create call record
+    const callRecord = {
+      id: Date.now(),
+      date: new Date().toLocaleString(),
+      duration: 0, // Could calculate from timestamps
+      transcripts: deduped
+    }
+
+    // Get existing saved calls
+    const existing = localStorage.getItem('medwing_saved_calls')
+    const savedCalls = existing ? JSON.parse(existing) : []
+
+    // Add new call
+    savedCalls.unshift(callRecord) // Add to beginning
+
+    // Save to localStorage
+    localStorage.setItem('medwing_saved_calls', JSON.stringify(savedCalls))
+
+    // Show success message
+    alert(`✅ Call saved! ${deduped.length} unique messages saved.\n\nView in Saved Calls tab.`)
   }
   const deliveries = [
     { title: 'Valle Alto - Insulin & supplies', status: 'in-progress', time: '4h' },
@@ -104,6 +136,10 @@ export default function Dashboard() {
             <span className="dashboard-nav-icon">⚙</span>
             Settings
           </a>
+          <Link to="/saved-calls" className="dashboard-nav-item">
+            <span className="dashboard-nav-icon">📞</span>
+            Saved Calls
+          </Link>
         </nav>
         <div className="dashboard-sidebar-user">
           <img src="/strange.jpeg" alt="Dr. Stephen Strange" className="dashboard-sidebar-user-avatar" />
