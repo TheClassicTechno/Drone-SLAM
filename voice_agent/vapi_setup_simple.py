@@ -129,9 +129,8 @@ Remember: Be patient, kind, and never rush. Healthcare workers are doing importa
         "maxDurationSeconds": 600,  # 10 minute maximum call duration
         "silenceTimeoutSeconds": 10,  # Hang up after 10 seconds of silence
 
-        # Webhook configuration (currently disabled - uncomment when ngrok tunnel is ready)
-        # This would allow the assistant to send order data to your server
-        # "serverUrl": f"{WEBHOOK_URL}/vapi-webhook"
+        # Webhook configuration - sends order data to your server
+        "serverUrl": f"{WEBHOOK_URL}/vapi-webhook"
     }
 
     print("\nCreating Medical Drone Delivery Assistant with Groq...\n")
